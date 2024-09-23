@@ -1,20 +1,24 @@
-// comment line
+require('dotenv').config()
+const express = require('express');
+const cors = require('cors')
+const app = express()
+const port = process.env.PORT || 5000;
+const mongoose = require('mongoose');
 
-// mahadi
-//Hello Mahadi
+
+// middlewires
+app.use(cors())
+app.use(express.json())
+
+//db
+mongoose.connect(process.env.URI).then(() => console.log("Connected to DB!"))
 
 
 
-//test 2 mahadi
+const companyCollection = client.db("expenseMaster").collection("Company");
+const userCollection = client.db("expenseMaster").collection("User");
 
-// test by nahiyan 
-// const let = 'test by nahiyan'
 
-const test = 'TEST BY Nahiyan AGAIN'
-
-// checked by Sayem Hossin
-// checked by Sayem Hossin
-// checked by Sayem Hossin
-// checked by Sayem Hossin
-// checked by Sayem Hossin
-// staging
+app.listen(port, () => {
+    console.log("running at", port);
+})
