@@ -46,6 +46,17 @@ async function run() {
             }
         });
 
+        // get companey financial data
+        // get data by email which get by middleware for security but for now getting a simple data
+        app.get('/company-data', async (req, res) => {
+            try {
+                const result = await companiesDataCollection.findOne();
+                res.send(result);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
         // add companey financial data
         app.post('/company-data', async (req, res) => {
             try {
