@@ -98,6 +98,8 @@ app.get('/find-by-email', async (req, res) => {
     }
 });
 
+run().catch(console.dir);
+
 
 app.listen(port, () => {
     console.log("Server is running at port", port);
