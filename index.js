@@ -9,99 +9,95 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection using MongoClient without deprecated options
-const client = new MongoClient(process.env.URI);
-let db;  // Global variable to store the database instance
-
 async function run() {
+    let client;
     try {
         // Connect the client to the server
+        client = new MongoClient(process.env.URI);
         await client.connect();
-        db = client.db();  // Assign the connected database to the global variable
+        const db = client.db('expenseMaster');  // Use 'expenseMaster' as the database
+
+        // Collections
+        const companiesCollection = db.collection('companies');
+        const usersCollection = db.collection('users');
 
         // Send a ping to confirm a successful connection
         await db.command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+        // Route to fetch all companies
+        app.get('/companies', async (req, res) => {
+            try {
+                const companies = await companiesCollection.find().toArray();
+                res.json(companies);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // Route to fetch all users
+        app.get('/users', async (req, res) => {
+            try {
+                const users = await usersCollection.find().toArray();
+                res.json(users);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // Route to add a new company
+        app.post('/companies', async (req, res) => {
+            try {
+                const newCompany = req.body;
+                const result = await companiesCollection.insertOne(newCompany);
+                res.json(result);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // Route to add a new user
+        app.post('/users', async (req, res) => {
+            try {
+                const newUser = req.body;
+                const result = await usersCollection.insertOne(newUser);
+                res.json(result);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // Route to check for email in both companies and users
+        app.get('/find-by-email', async (req, res) => {
+            const { email } = req.query;
+            try {
+                // Check users collection
+                const user = await usersCollection.findOne({ email });
+                if (user) return res.json('user');
+
+                // Check companies collection
+                const company = await companiesCollection.findOne({ email });
+                if (company) return res.json('company');
+
+                // If not found in both collections
+                res.status(404).json({ message: 'User or Company not found' });
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
     }
+
+    // Start server only after MongoDB is connected
+    app.listen(port, () => {
+        console.log("Server is running at port", port);
+    });
 }
 run().catch(console.dir);
 
-// Example route to fetch companies
-app.get('/companies', async (req, res) => {
-    try {
-        const companies = await db.collection('companies').find().toArray();  // Fetch all companies
-        res.json(companies);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
 
-// Example route to fetch users
-app.get('/users', async (req, res) => {
-    try {
-        const users = await db.collection('users').find().toArray();  // Fetch all users
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// Example of adding a new company (POST route)
-app.post('/companies', async (req, res) => {
-    try {
-        const newCompany = req.body;
-        const result = await db.collection('companies').insertOne(newCompany);  // Insert a new company
-        res.json(result);
-        // console.log("is company inserted", result);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// Example of adding a new user (POST route)
-app.post('/users', async (req, res) => {
-    try {
-        const newUser = req.body;
-        const result = await db.collection('users').insertOne(newUser);  // Insert a new user
-        res.json(result);
-        console.log("is user inserted", result);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// Route to check both companies and users by email
-app.get('/find-by-email', async (req, res) => {
-    const { email } = req.query;
-
-    try {
-        // Check for the email in the users collection
-        const user = await db.collection('users').findOne({ email });
-
-        if (user) {
-            return res.json('user');  // Send "user" as the response
-        }
-
-        // If not found in users, check in the companies collection
-        const company = await db.collection('companies').findOne({ email });
-
-        if (company) {
-            return res.json('company');  // Send "company" as the response
-        }
-
-        // If not found in both collections
-        return res.status(404).json({ message: 'User or Company not found' });
-    } catch (error) {
-        return res.status(500).json({ message: 'Internal server error', error: error.message });
-    }
-});
-
-
-app.listen(port, () => {
-    console.log("Server is running at port", port);
-});
 
 
 
