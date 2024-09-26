@@ -19,6 +19,7 @@ async function run() {
 
         // Collections
         const companiesCollection = db.collection('companies');
+        const companiesDataCollection = db.collection('companiesData');
         const usersCollection = db.collection('users');
 
         // Send a ping to confirm a successful connection
@@ -40,6 +41,28 @@ async function run() {
             try {
                 const users = await usersCollection.find().toArray();
                 res.json(users);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // get companey financial data
+        // get data by email which get by middleware for security but for now getting a simple data
+        app.get('/company-data', async (req, res) => {
+            try {
+                const result = await companiesDataCollection.findOne();
+                res.send(result);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // add companey financial data
+        app.post('/company-data', async (req, res) => {
+            try {
+                const data = req.body;
+                const result = await companiesDataCollection.insertOne(data);
+                res.json(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
             }
