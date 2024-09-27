@@ -19,6 +19,7 @@ async function run() {
 
         // Collections
         const companiesCollection = db.collection('companies');
+        const companiesDataCollection = db.collection('companiesData');
         const usersCollection = db.collection('users');
 
         // Send a ping to confirm a successful connection
@@ -45,6 +46,28 @@ async function run() {
             }
         });
 
+        // get companey financial data
+        // get data by email which get by middleware for security but for now getting a simple data
+        app.get('/company-data', async (req, res) => {
+            try {
+                const result = await companiesDataCollection.findOne();
+                res.send(result);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // add companey financial data
+        app.post('/company-data', async (req, res) => {
+            try {
+                const data = req.body;
+                const result = await companiesDataCollection.insertOne(data);
+                res.json(result);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
         // Route to add a new company
         app.post('/companies', async (req, res) => {
             try {
@@ -66,6 +89,38 @@ async function run() {
                 res.status(500).json({ message: error.message });
             }
         });
+
+        // updated joining request data to user collection
+
+        app.put('/users/:email', async (req, res) => {
+            const userEmail = req.params.email;
+            const { companyName, righter } = req.body; 
+
+            try {
+                const result = await usersCollection.updateOne(
+                    { email: userEmail },
+                    {
+                        $set: {
+                            companyName: companyName,
+                            righter: righter
+                        }
+                    }
+                );
+
+                if (result.matchedCount > 0) {
+                    res.status(200).json({ message: 'User updated successfully' });
+                } else {
+                    res.status(404).json({ message: 'User not found' });
+                }
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+
+
+
+
 
         // Route to check for email in both companies and users
         app.get('/find-by-email', async (req, res) => {
