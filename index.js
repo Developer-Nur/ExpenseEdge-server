@@ -67,6 +67,38 @@ async function run() {
             }
         });
 
+        // updated joining request data to user collection
+
+        app.put('/users/:email', async (req, res) => {
+            const userEmail = req.params.email;
+            const { companyName, righter } = req.body; 
+
+            try {
+                const result = await usersCollection.updateOne(
+                    { email: userEmail },
+                    {
+                        $set: {
+                            companyName: companyName,
+                            righter: righter
+                        }
+                    }
+                );
+
+                if (result.matchedCount > 0) {
+                    res.status(200).json({ message: 'User updated successfully' });
+                } else {
+                    res.status(404).json({ message: 'User not found' });
+                }
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+
+
+
+
+
         // Route to check for email in both companies and users
         app.get('/find-by-email', async (req, res) => {
             const { email } = req.query;
