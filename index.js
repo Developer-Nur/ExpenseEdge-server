@@ -19,7 +19,6 @@ async function run() {
 
         // Collections
         const companiesCollection = db.collection('companies');
-        const companiesDataCollection = db.collection('companiesData');
         const usersCollection = db.collection('users');
 
         // Send a ping to confirm a successful connection
