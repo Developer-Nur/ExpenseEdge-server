@@ -19,7 +19,6 @@ async function run() {
 
         // Collections
         const companiesCollection = db.collection('companies');
-        const companiesDataCollection = db.collection('companiesData');
         const usersCollection = db.collection('users');
 
         // Send a ping to confirm a successful connection
@@ -46,22 +45,30 @@ async function run() {
             }
         });
 
-        // get companey financial data
-        // get data by email which get by middleware for security but for now getting a simple data
-        app.get('/company-data', async (req, res) => {
+        // get company data
+        app.get('/company/:email', async (req, res) => {
             try {
-                const result = await companiesDataCollection.findOne();
+                const email = req.params.email;
+                const result = await companiesCollection.findOne({email: email});
                 res.send(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
             }
         });
 
-        // add companey financial data
-        app.post('/company-data', async (req, res) => {
+        // add company financial data
+        app.patch('/company/:email', async (req, res) => {
             try {
                 const data = req.body;
-                const result = await companiesDataCollection.insertOne(data);
+                const email = req.params.email;
+                const result = await companiesCollection.updateOne(
+                    {email: email},
+                    {
+                        $set: {
+                            data: data
+                        }
+                    }
+                );
                 res.json(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
