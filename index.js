@@ -57,11 +57,19 @@ async function run() {
             }
         });
 
-        // add companey financial data
-        app.post('/company-data', async (req, res) => {
+        // add company financial data
+        app.patch('/company/:email', async (req, res) => {
             try {
                 const data = req.body;
-                const result = await companiesDataCollection.insertOne(data);
+                const email = req.params.email;
+                const result = await companiesCollection.updateOne(
+                    {email: email},
+                    {
+                        $set: {
+                            data: data
+                        }
+                    }
+                );
                 res.json(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
