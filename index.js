@@ -46,11 +46,21 @@ async function run() {
             }
         });
 
+        // fetch by only email
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email
+            const result = await usersCollection.findOne({ email })
+            res.send(result)
+        })
+
+
+
+
         // get companey financial data
         // get data by email which get by middleware for security but for now getting a simple data
         app.get('/company-data', async (req, res) => {
             try {
-                const result = await companiesDataCollection.findOne();
+                const result = await companiesDataCollection.find().toArray();
                 res.send(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
@@ -94,7 +104,7 @@ async function run() {
 
         app.put('/users/:email', async (req, res) => {
             const userEmail = req.params.email;
-            const { companyName, righter } = req.body; 
+            const { companyName, righter } = req.body;
 
             try {
                 const result = await usersCollection.updateOne(
