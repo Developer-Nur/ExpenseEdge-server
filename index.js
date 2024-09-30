@@ -9,6 +9,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+
 async function run() {
     let client;
     try {
@@ -148,9 +149,39 @@ async function run() {
             }
         });
 
+
+
+        app.put('/users/:id/approve', async (req, res) => {
+            const userId = req.params.id;
+            console.log(`Approving user with ID: ${userId}`);
+        
+            try {
+                const result = await usersCollection.updateOne(
+                    { _id: new ObjectId(userId) },
+                    { $set: { approved: true } }
+                );
+        
+                if (result.matchedCount === 0) {
+                    console.error('User not found');
+                    return res.status(404).send({ message: 'User not found' });
+                }
+        
+                res.status(200).send({ message: 'User approved successfully' });
+            } catch (error) {
+                console.error('Error approving user:', error);  // Log error for debugging
+                res.status(500).send({ message: 'Internal server error' });
+            }
+        });
+        
+
+
+
+
+
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
     }
+
 
     // Start server only after MongoDB is connected
     app.listen(port, () => {
