@@ -9,6 +9,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+
 async function run() {
     let client;
     try {
@@ -45,16 +46,50 @@ async function run() {
             }
         });
 
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email
+            const result = await usersCollection.findOne({ email })
+            res.send(result)
+        })
+
         // get company data
         app.get('/company/:email', async (req, res) => {
             try {
                 const email = req.params.email;
-                const result = await companiesCollection.findOne({email: email});
+                const result = await companiesCollection.findOne({ email: email });
                 res.send(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
             }
         });
+
+        // update company data
+        app.put('/update-company-data/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedQuery = {
+                $set: {
+                    "data.income": query.income,
+                    "data.expense": query.expense,
+                    "data.assets": query.assets,
+                    "data.liabilities": query.liabilities,
+                    "data.equity": query.equity
+                }
+            };
+            const result = await companiesCollection.updateOne(filter, updatedQuery, options);
+            res.send(result);
+        });
+
+
+
+
+
+
+
+
+
 
         // add company financial data
         app.patch('/company/:email', async (req, res) => {
@@ -62,7 +97,7 @@ async function run() {
                 const data = req.body;
                 const email = req.params.email;
                 const result = await companiesCollection.updateOne(
-                    {email: email},
+                    { email: email },
                     {
                         $set: {
                             data: data
@@ -74,6 +109,13 @@ async function run() {
                 res.status(500).json({ message: error.message });
             }
         });
+
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email
+            const result = await usersCollection.findOne({ email })
+            res.send(result)
+        })
+
 
         // Route to add a new company
         app.post('/companies', async (req, res) => {
@@ -101,7 +143,7 @@ async function run() {
 
         app.put('/users/:email', async (req, res) => {
             const userEmail = req.params.email;
-            const { companyName, righter } = req.body; 
+            const { companyName, righter } = req.body;
 
             try {
                 const result = await usersCollection.updateOne(
@@ -126,7 +168,7 @@ async function run() {
 
 
 
-
+           
 
 
         // Route to check for email in both companies and users
@@ -148,9 +190,39 @@ async function run() {
             }
         });
 
+
+
+        app.put('/users/:id/approve', async (req, res) => {
+            const userId = req.params.id;
+            console.log(`Approving user with ID: ${userId}`);
+        
+            try {
+                const result = await usersCollection.updateOne(
+                    { _id: new ObjectId(userId) },
+                    { $set: { approved: true } }
+                );
+        
+                if (result.matchedCount === 0) {
+                    console.error('User not found');
+                    return res.status(404).send({ message: 'User not found' });
+                }
+        
+                res.status(200).send({ message: 'User approved successfully' });
+            } catch (error) {
+                console.error('Error approving user:', error);  // Log error for debugging
+                res.status(500).send({ message: 'Internal server error' });
+            }
+        });
+        
+
+
+
+
+
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
     }
+
 
     // Start server only after MongoDB is connected
     app.listen(port, () => {
@@ -158,7 +230,6 @@ async function run() {
     });
 }
 run().catch(console.dir);
-
 
 
 
