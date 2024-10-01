@@ -22,7 +22,7 @@ async function run() {
         const companiesCollection = db.collection('companies');
         const usersCollection = db.collection('users');
 
-        // Send a ping to confirm a successful connection
+        // Send a ping to confirm a successful connection 
         await db.command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
@@ -46,6 +46,8 @@ async function run() {
             }
         });
 
+<<<<<<< HEAD
+=======
         app.get('/user/:email', async (req, res) => {
             const email = req.params.email
             const result = await usersCollection.findOne({ email })
@@ -53,6 +55,7 @@ async function run() {
         })
 
         // get company data
+>>>>>>> 570fd422209aff69739bafe097c360daac0d73f4
         app.get('/company/:email', async (req, res) => {
             try {
                 const email = req.params.email;
@@ -63,6 +66,8 @@ async function run() {
             }
         });
 
+<<<<<<< HEAD
+=======
         // update company data
         app.put('/update-company-data/:id', async (req, res) => {
             const id = req.params.id;
@@ -89,6 +94,7 @@ async function run() {
 
 
 
+>>>>>>> 570fd422209aff69739bafe097c360daac0d73f4
 
 
         // add company financial data
@@ -168,12 +174,13 @@ async function run() {
 
 
 
-           
+
 
 
         // Route to check for email in both companies and users
         app.get('/find-by-email', async (req, res) => {
             const { email } = req.query;
+            // console.log("required email is", email);
             try {
                 // Check users collection
                 const user = await usersCollection.findOne({ email });
@@ -195,26 +202,38 @@ async function run() {
         app.put('/users/:id/approve', async (req, res) => {
             const userId = req.params.id;
             console.log(`Approving user with ID: ${userId}`);
-        
+
             try {
                 const result = await usersCollection.updateOne(
                     { _id: new ObjectId(userId) },
                     { $set: { approved: true } }
                 );
-        
+
                 if (result.matchedCount === 0) {
                     console.error('User not found');
                     return res.status(404).send({ message: 'User not found' });
                 }
-        
+
                 res.status(200).send({ message: 'User approved successfully' });
             } catch (error) {
                 console.error('Error approving user:', error);  // Log error for debugging
                 res.status(500).send({ message: 'Internal server error' });
             }
         });
-        
 
+        // company data for company dashboard
+        app.get('/company-info/:email', async (req, res) => {
+            try {
+                const email = req.params.email;
+                if (!email) {
+                    return res.status(400).json({ message: 'Email query parameter is missing' });
+                }
+                const result = await companiesCollection.findOne({ email: email });
+                res.send(result);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
 
 
 
