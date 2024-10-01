@@ -46,6 +46,16 @@ async function run() {
             }
         });
 
+<<<<<<< HEAD
+=======
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email
+            const result = await usersCollection.findOne({ email })
+            res.send(result)
+        })
+
+        // get company data
+>>>>>>> 570fd422209aff69739bafe097c360daac0d73f4
         app.get('/company/:email', async (req, res) => {
             try {
                 const email = req.params.email;
@@ -56,6 +66,35 @@ async function run() {
             }
         });
 
+<<<<<<< HEAD
+=======
+        // update company data
+        app.put('/update-company-data/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedQuery = {
+                $set: {
+                    "data.income": query.income,
+                    "data.expense": query.expense,
+                    "data.assets": query.assets,
+                    "data.liabilities": query.liabilities,
+                    "data.equity": query.equity
+                }
+            };
+            const result = await companiesCollection.updateOne(filter, updatedQuery, options);
+            res.send(result);
+        });
+
+
+
+
+
+
+
+
+>>>>>>> 570fd422209aff69739bafe097c360daac0d73f4
 
 
         // add company financial data
@@ -76,6 +115,13 @@ async function run() {
                 res.status(500).json({ message: error.message });
             }
         });
+
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email
+            const result = await usersCollection.findOne({ email })
+            res.send(result)
+        })
+
 
         // Route to add a new company
         app.post('/companies', async (req, res) => {
