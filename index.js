@@ -19,7 +19,6 @@ async function run() {
 
         // Collections
         const companiesCollection = db.collection('companies');
-        const companiesDataCollection = db.collection('companiesData');
         const usersCollection = db.collection('users');
 
         // Send a ping to confirm a successful connection
@@ -46,37 +45,76 @@ async function run() {
             }
         });
 
-        // fetch by only email
         app.get('/user/:email', async (req, res) => {
             const email = req.params.email
             const result = await usersCollection.findOne({ email })
             res.send(result)
         })
 
-
-
-
-        // get companey financial data
-        // get data by email which get by middleware for security but for now getting a simple data
-        app.get('/company-data', async (req, res) => {
+        // get company data
+        app.get('/company/:email', async (req, res) => {
             try {
-                const result = await companiesDataCollection.find().toArray();
+                const email = req.params.email;
+                const result = await companiesCollection.findOne({ email: email });
                 res.send(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
             }
         });
 
-        // add companey financial data
-        app.post('/company-data', async (req, res) => {
+        // update company data
+        app.put('/update-company-data/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedQuery = {
+                $set: {
+                    "data.income": query.income,
+                    "data.expense": query.expense,
+                    "data.assets": query.assets,
+                    "data.liabilities": query.liabilities,
+                    "data.equity": query.equity
+                }
+            };
+            const result = await companiesCollection.updateOne(filter, updatedQuery, options);
+            res.send(result);
+        });
+
+
+
+
+
+
+
+
+
+
+        // add company financial data
+        app.patch('/company/:email', async (req, res) => {
             try {
                 const data = req.body;
-                const result = await companiesDataCollection.insertOne(data);
+                const email = req.params.email;
+                const result = await companiesCollection.updateOne(
+                    { email: email },
+                    {
+                        $set: {
+                            data: data
+                        }
+                    }
+                );
                 res.json(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
             }
         });
+
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email
+            const result = await usersCollection.findOne({ email })
+            res.send(result)
+        })
+
 
         // Route to add a new company
         app.post('/companies', async (req, res) => {
