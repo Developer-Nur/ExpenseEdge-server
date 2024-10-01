@@ -9,6 +9,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+
 async function run() {
     let client;
     try {
@@ -19,7 +20,6 @@ async function run() {
 
         // Collections
         const companiesCollection = db.collection('companies');
-        const companiesDataCollection = db.collection('companiesData');
         const usersCollection = db.collection('users');
 
         // Send a ping to confirm a successful connection
@@ -46,22 +46,30 @@ async function run() {
             }
         });
 
-        // get companey financial data
-        // get data by email which get by middleware for security but for now getting a simple data
-        app.get('/company-data', async (req, res) => {
+        // get company data
+        app.get('/company/:email', async (req, res) => {
             try {
-                const result = await companiesDataCollection.findOne();
+                const email = req.params.email;
+                const result = await companiesCollection.findOne({email: email});
                 res.send(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
             }
         });
 
-        // add companey financial data
-        app.post('/company-data', async (req, res) => {
+        // add company financial data
+        app.patch('/company/:email', async (req, res) => {
             try {
                 const data = req.body;
-                const result = await companiesDataCollection.insertOne(data);
+                const email = req.params.email;
+                const result = await companiesCollection.updateOne(
+                    {email: email},
+                    {
+                        $set: {
+                            data: data
+                        }
+                    }
+                );
                 res.json(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
@@ -119,7 +127,7 @@ async function run() {
 
 
 
-
+           
 
 
         // Route to check for email in both companies and users
@@ -141,9 +149,39 @@ async function run() {
             }
         });
 
+
+
+        app.put('/users/:id/approve', async (req, res) => {
+            const userId = req.params.id;
+            console.log(`Approving user with ID: ${userId}`);
+        
+            try {
+                const result = await usersCollection.updateOne(
+                    { _id: new ObjectId(userId) },
+                    { $set: { approved: true } }
+                );
+        
+                if (result.matchedCount === 0) {
+                    console.error('User not found');
+                    return res.status(404).send({ message: 'User not found' });
+                }
+        
+                res.status(200).send({ message: 'User approved successfully' });
+            } catch (error) {
+                console.error('Error approving user:', error);  // Log error for debugging
+                res.status(500).send({ message: 'Internal server error' });
+            }
+        });
+        
+
+
+
+
+
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
     }
+
 
     // Start server only after MongoDB is connected
     app.listen(port, () => {
@@ -151,7 +189,6 @@ async function run() {
     });
 }
 run().catch(console.dir);
-
 
 
 
