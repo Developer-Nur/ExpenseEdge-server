@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
@@ -26,6 +27,15 @@ async function run() {
         await db.command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
+        // jwt related api
+        app.post("/jwt", async (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.Access_Secret_Token, { expiresIn: '1h' });
+            // console.log("jwt email is", user, "and token is ", token);
+            res.send({ token })
+        })
+
+
         // Route to fetch all companies
         app.get('/companies', async (req, res) => {
             try {
@@ -46,8 +56,6 @@ async function run() {
             }
         });
 
-<<<<<<< HEAD
-=======
         app.get('/user/:email', async (req, res) => {
             const email = req.params.email
             const result = await usersCollection.findOne({ email })
@@ -55,7 +63,6 @@ async function run() {
         })
 
         // get company data
->>>>>>> 570fd422209aff69739bafe097c360daac0d73f4
         app.get('/company/:email', async (req, res) => {
             try {
                 const email = req.params.email;
@@ -66,8 +73,6 @@ async function run() {
             }
         });
 
-<<<<<<< HEAD
-=======
         // update company data
         app.put('/update-company-data/:id', async (req, res) => {
             const id = req.params.id;
@@ -94,7 +99,6 @@ async function run() {
 
 
 
->>>>>>> 570fd422209aff69739bafe097c360daac0d73f4
 
 
         // add company financial data
