@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
@@ -25,6 +26,15 @@ async function run() {
         // Send a ping to confirm a successful connection 
         await db.command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+        // jwt related api
+        app.post("/jwt", async (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.Access_Secret_Token, { expiresIn: '1h' });
+            // console.log("jwt email is", user, "and token is ", token);
+            res.send({ token })
+        })
+
 
         // Route to fetch all companies
         app.get('/companies', async (req, res) => {
