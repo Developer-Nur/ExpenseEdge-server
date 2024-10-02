@@ -200,9 +200,9 @@ async function run() {
 
 // Route to get users by name
 app.get('/users/:name', async (req, res) => {
-    const userName = req.params.name;
+    const companyName = req.params.name;
     try {
-        const users = await db.collection('users').find({ name: userName }).toArray(); // Replace 'users' with your collection name
+        const users = await usersCollection.find({ companyName: companyName }).toArray(); // Replace 'users' with your collection name
         if (users.length > 0) {
             res.status(200).json(users);
         } else {
