@@ -230,7 +230,7 @@ app.put('/users/:id/approve', async (req, res) => {
     try {
         const result = await db.collection('users').updateOne(
             { _id: new ObjectId(userId) },
-            { $set: { approved: true } }
+            { $set: { righter: "approved" } }
         );
 
         if (result.modifiedCount > 0) {
