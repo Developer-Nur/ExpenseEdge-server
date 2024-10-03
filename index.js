@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
@@ -22,13 +23,44 @@ async function run() {
         const companiesCollection = db.collection('companies');
         const usersCollection = db.collection('users');
 
-        // Send a ping to confirm a successful connection
+        // Send a ping to confirm a successful connection 
         await db.command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
+        // middlewere to verify jwt token
+        const verifyToken = (req, res, next) => {
+            // console.log('inside verify token', req.headers);
+
+            if (!req.headers.authorization) {
+                // console.log(" data update in company", req.headers.authorization);
+                return res.status(400).send({ message: 'forbidden access' });
+            }
+
+            const token = req.headers.authorization.split(' ')[1];
+            // console.log("the token", token);
+            jwt.verify(token, process.env.Access_Secret_Token, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'forbidden access' });
+                }
+                req.decoded = decoded;
+                next();
+            });
+        };
+
+
+        // jwt related api
+        app.post("/jwt", async (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.Access_Secret_Token, { expiresIn: '2h' });
+            // console.log("jwt email is", user, "and token is ", token);
+            res.send({ token })
+        })
+
+
         // Route to fetch all companies
-        app.get('/companies', async (req, res) => {
+        app.get('/companies', verifyToken, async (req, res) => {
             try {
+                // console.log("token from local storage", req.headers);
                 const companies = await companiesCollection.find().toArray();
                 res.json(companies);
             } catch (error) {
@@ -37,7 +69,7 @@ async function run() {
         });
 
         // Route to fetch all users
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyToken, async (req, res) => {
             try {
                 const users = await usersCollection.find().toArray();
                 res.json(users);
@@ -92,7 +124,7 @@ async function run() {
 
 
         // add company financial data
-        app.patch('/company/:email', async (req, res) => {
+        app.patch('/company/:email', verifyToken, async (req, res) => {
             try {
                 const data = req.body;
                 const email = req.params.email;
@@ -140,7 +172,6 @@ async function run() {
         });
 
         // updated joining request data to user collection
-
         app.put('/users/:email', async (req, res) => {
             const userEmail = req.params.email;
             const { companyName, righter } = req.body;
@@ -168,12 +199,13 @@ async function run() {
 
 
 
-           
+
 
 
         // Route to check for email in both companies and users
         app.get('/find-by-email', async (req, res) => {
             const { email } = req.query;
+            // console.log("required email is", email);
             try {
                 // Check users collection
                 const user = await usersCollection.findOne({ email });
@@ -192,29 +224,74 @@ async function run() {
 
 
 
-        app.put('/users/:id/approve', async (req, res) => {
-            const userId = req.params.id;
-            console.log(`Approving user with ID: ${userId}`);
-        
+
+
+
+
+
+        // Route to get users by name
+        app.get('/users/:name', async (req, res) => {
+            const companyName = req.params.name;
             try {
-                const result = await usersCollection.updateOne(
-                    { _id: new ObjectId(userId) },
-                    { $set: { approved: true } }
-                );
-        
-                if (result.matchedCount === 0) {
-                    console.error('User not found');
-                    return res.status(404).send({ message: 'User not found' });
+                const users = await usersCollection.find({ companyName: companyName }).toArray(); // Replace 'users' with your collection name
+                if (users.length > 0) {
+                    res.status(200).json(users);
+                } else {
+                    res.status(404).json({ message: "User not found" });
                 }
-        
-                res.status(200).send({ message: 'User approved successfully' });
             } catch (error) {
-                console.error('Error approving user:', error);  // Log error for debugging
-                res.status(500).send({ message: 'Internal server error' });
+                console.error('Error fetching users:', error);
+                res.status(500).json({ message: "Error fetching users" });
             }
         });
-        
 
+        // Route to approve a user by ID
+        app.put('/users/:id/approve', verifyToken, async (req, res) => {
+            const userId = req.params.id;
+            try {
+                const result = await db.collection('users').updateOne(
+                    { _id: new ObjectId(userId) },
+                    { $set: { righter: "approved" } }
+                );
+
+                if (result.modifiedCount > 0) {
+                    res.status(200).json({ message: "User approved successfully" });
+                } else {
+                    res.status(404).json({ message: "User not found" });
+                }
+            } catch (error) {
+                console.error('Error approving user:', error);
+                res.status(500).json({ message: "Error approving user" });
+            }
+        });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // company data for company dashboard
+        app.get('/company-info/:email', async (req, res) => {
+            try {
+                const email = req.params.email;
+                if (!email) {
+                    return res.status(400).json({ message: 'Email query parameter is missing' });
+                }
+                const result = await companiesCollection.findOne({ email: email });
+                res.send(result);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
 
 
 
