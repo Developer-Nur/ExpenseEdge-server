@@ -85,15 +85,21 @@ async function run() {
         })
 
         // get company data
-        app.get('/company/:email', async (req, res) => {
+        app.get('/single-company/:companyName', async (req, res) => {
             try {
-                const email = req.params.email;
-                const result = await companiesCollection.findOne({ email: email });
-                res.send(result);
+                const companyName = req.params.companyName;
+                const result = await companiesCollection.findOne({ companyName: companyName });
+                if (!result) {
+                    return res.status(404).json({ message: 'Company not found' });
+                }
+                res.json(result);
             } catch (error) {
-                res.status(500).json({ message: error.message });
+                console.error('Error fetching company data:', error); // Log error for debugging
+                res.status(500).json({ message: 'Server error: ' + error.message }); // Return server error message
             }
         });
+
+
 
         // update company data
         app.put('/update-company-data/:id', async (req, res) => {
