@@ -27,6 +27,15 @@ async function run() {
         await db.command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
+        // get date
+        function getCurrentDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Month is zero-based
+            const dd = String(today.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+          }
+        
         // middlewere to verify jwt token
         const verifyToken = (req, res, next) => {
             // console.log('inside verify token', req.headers);
