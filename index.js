@@ -34,7 +34,7 @@ async function run() {
             const mm = String(today.getMonth() + 1).padStart(2, '0'); // Month is zero-based
             const dd = String(today.getDate()).padStart(2, '0');
             return `${yyyy}-${mm}-${dd}`;
-          }
+        }
         
         // middlewere to verify jwt token
         const verifyToken = (req, res, next) => {
@@ -56,7 +56,6 @@ async function run() {
             });
         };
 
-
         // jwt related api
         app.post("/jwt", async (req, res) => {
             const user = req.body;
@@ -64,7 +63,6 @@ async function run() {
             // console.log("jwt email is", user, "and token is ", token);
             res.send({ token })
         })
-
 
         // Route to fetch all companies
         app.get('/companies', verifyToken, async (req, res) => {
@@ -108,8 +106,6 @@ async function run() {
             }
         });
 
-
-
         // update company data
         app.put('/update-company-data/:id', async (req, res) => {
             const id = req.params.id;
@@ -128,15 +124,6 @@ async function run() {
             const result = await companiesCollection.updateOne(filter, updatedQuery, options);
             res.send(result);
         });
-
-
-
-
-
-
-
-
-
 
         // add company financial data
         app.patch('/company/:email', verifyToken, async (req, res) => {
@@ -174,7 +161,6 @@ async function run() {
             const result = await usersCollection.findOne({ email })
             res.send(result)
         })
-
 
         // Route to add a new company
         app.post('/companies', async (req, res) => {
@@ -224,11 +210,6 @@ async function run() {
             }
         });
 
-
-
-
-
-
         // Route to check for email in both companies and users
         app.get('/find-by-email', async (req, res) => {
             const { email } = req.query;
@@ -248,13 +229,6 @@ async function run() {
                 res.status(500).json({ message: error.message });
             }
         });
-
-
-
-
-
-
-
 
         // Route to get users by name
         app.get('/users/:name', async (req, res) => {
@@ -292,20 +266,6 @@ async function run() {
             }
         });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         // company data for company dashboard
         app.get('/company-info/:email', async (req, res) => {
             try {
@@ -314,19 +274,15 @@ async function run() {
                     return res.status(400).json({ message: 'Email query parameter is missing' });
                 }
                 const result = await companiesCollection.findOne({ email: email });
-                res.send(result);
+                res.send(result.data);
             } catch (error) {
                 res.status(500).json({ message: error.message });
             }
         });
-
-
-
-
+        
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
     }
-
 
     // Start server only after MongoDB is connected
     app.listen(port, () => {
