@@ -141,14 +141,26 @@ async function run() {
         // add company financial data
         app.patch('/company/:email', verifyToken, async (req, res) => {
             try {
-                const data = req.body;
+                const { income, expense, assets, liabilities, equity } = req.body;
                 const email = req.params.email;
+
+                const newIncomeExpenseEntry = {
+                    date: getCurrentDate(),
+                    income: parseFloat(income),
+                    expense: parseFloat(expense),
+                };
+
+                const newBalanceData = [
+                    { id: 3, title: "Assets", amount: parseFloat(assets) },
+                    { id: 4, title: "Liabilities", amount: parseFloat(liabilities) },
+                    { id: 5, title: "Equity", amount: parseFloat(equity) }
+                ];
+
                 const result = await companiesCollection.updateOne(
                     { email: email },
                     {
-                        $set: {
-                            data: data
-                        }
+                        $push: { "data.incomeExpense": newIncomeExpenseEntry },
+                        $set: { "data.balanceData": newBalanceData }
                     }
                 );
                 res.json(result);
