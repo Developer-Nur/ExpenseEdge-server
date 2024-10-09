@@ -125,6 +125,47 @@ async function run() {
             res.send(result);
         });
 
+
+        //  make admin api
+        app.patch('/users/admin/:id', async (req, res) => {
+            const id = req.params.id
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updatedDoc)
+            res.send(result)
+        })
+
+        // delete a user api
+        app.delete('/users/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await usersCollection.deleteOne(query);
+            res.send(result);
+        });
+
+
+
+        // delete a company api
+        app.delete('/company/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await companiesCollection.deleteOne(query);
+            res.send(result);
+        });
+
+
+
+
+
+
+
+
+
+
         // add company financial data
         app.patch('/company/:email', verifyToken, async (req, res) => {
             try {
