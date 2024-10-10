@@ -321,7 +321,7 @@ async function run() {
                 res.status(500).json({ message: error.message });
             }
         });
-        
+
         // get events
         app.get('/events/:email', async (req, res) => {
             const { email } = req.params;
@@ -337,7 +337,7 @@ async function run() {
                 res.status(500).json({ message: err.message });
             }
         });
-
+        
         // add events
         app.post('/events/:email', async (req, res) => {
             const { email } = req.params;
@@ -366,7 +366,7 @@ async function run() {
                 res.status(500).json({ message: err.message });
             }
         });
-
+         
         // Update events
         app.put('/events/:email/:eventId', async (req, res) => {
             const { email, eventId } = req.params;
@@ -397,7 +397,26 @@ async function run() {
                 res.status(500).json({ message: 'Internal server error.' });
             }
         });
- 
+
+        // Delete an event
+        app.delete('/events/:email/:eventId', async (req, res) => {
+            const { email, eventId } = req.params;
+
+            try {
+                const result = await companiesCollection.updateOne(
+                    { email },
+                    { $pull: { events: { _id: new ObjectId(eventId) } } }
+                );
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: 'Event or company not found' });
+                }
+                res.json({ message: 'Event deleted successfully' });
+            } catch (err) {
+                console.error("Error deleting event:", err); // Log the error for debugging
+                res.status(500).json({ message: err.message });
+            }
+        });
+        
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
     }
