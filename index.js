@@ -169,7 +169,7 @@ async function run() {
         // add company financial data
         app.patch('/company/:email', verifyToken, async (req, res) => {
             try {
-                const { income, expense, assets, liabilities, equity } = req.body;
+                const { income, expense, assets, liabilities, equity, expectedIncome } = req.body;
                 const email = req.params.email;
 
                 const newIncomeExpenseEntry = {
@@ -181,7 +181,8 @@ async function run() {
                 const newBalanceData = [
                     { id: 3, title: "Assets", amount: parseFloat(assets) },
                     { id: 4, title: "Liabilities", amount: parseFloat(liabilities) },
-                    { id: 5, title: "Equity", amount: parseFloat(equity) }
+                    { id: 5, title: "Equity", amount: parseFloat(equity) },
+                    { id: 6, title: "Expected Income", amount: parseFloat(expectedIncome) }
                 ];
 
                 const result = await companiesCollection.updateOne(
@@ -315,7 +316,7 @@ async function run() {
                     return res.status(400).json({ message: 'Email query parameter is missing' });
                 }
                 const result = await companiesCollection.findOne({ email: email });
-                res.send(result.data);
+                res.send(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
             }
