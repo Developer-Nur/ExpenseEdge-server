@@ -307,6 +307,21 @@ async function run() {
             }
         });
 
+
+         // company data for Financial Overview dashboard
+         app.get('/financial-info/:email', async (req, res) => {
+            try {
+                const email = req.params.email;
+                if (!email) {
+                    return res.status(400).json({ message: 'Email query parameter is missing' });
+                }
+                const result = await companiesCollection.findOne({ email: email });
+                res.send(result);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
         // company data for company dashboard
         app.get('/company-info/:email', async (req, res) => {
             try {
