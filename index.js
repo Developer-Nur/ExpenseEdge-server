@@ -280,7 +280,7 @@ async function run() {
                 if (users.length > 0) {
                     res.status(200).json(users);
                 } else {
-                    res.status(404).json({ message: "User not found" });
+                    res.send({ message: "User not found" });
                 }
             } catch (error) {
                 console.error('Error fetching users:', error);
@@ -319,6 +319,101 @@ async function run() {
                 res.send(result);
             } catch (error) {
                 res.status(500).json({ message: error.message });
+            }
+        });
+
+        // get events
+        app.get('/events/:email', async (req, res) => {
+            const { email } = req.params;
+            console.log(email);
+            try {
+                const company = await companiesCollection.findOne({email});
+                if (!company) {
+                    return res.status(404).json({ message: 'Company not found' });
+                }
+                console.log(company.events);
+                res.json(company.events || []);
+            } catch (err) {
+                res.status(500).json({ message: err.message });
+            }
+        });
+        
+        // add events
+        app.post('/events/:email', async (req, res) => {
+            const { email } = req.params;
+            const { title, start, end } = req.body;
+            console.log(email, req.body);
+
+            if (!title || !start || !end) {
+                return res.status(400).json({ message: 'Title, Start, and End are required' });
+            }
+        
+            try {
+                const event = { 
+                    _id: new ObjectId(),
+                    title, 
+                    start: new Date(start), 
+                    end: new Date(end) };
+                const result = await companiesCollection.updateOne(
+                    { email },
+                    { $push: { events: event } }
+                );
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: 'Company not found' });
+                }
+                res.status(201).json({ message: 'Event added successfully', event });
+            } catch (err) {
+                res.status(500).json({ message: err.message });
+            }
+        });
+         
+        // Update events
+        app.put('/events/:email/:eventId', async (req, res) => {
+            const { email, eventId } = req.params;
+            const { title, start, end } = req.body;
+
+            console.log(email, eventId);
+            try {
+                // Ensure the input values are valid
+                if (!title || !start || !end) {
+                    return res.status(400).json({ message: 'Title, start, and end are required.' });
+                }
+
+                // Update the event in the companiesCollection
+                const result = await companiesCollection.updateOne(
+                    { email, 'events._id': new ObjectId(eventId) }, // Search for the event by ID
+                    { $set: { 'events.$.title': title, 'events.$.start': new Date(start), 'events.$.end': new Date(end) } }
+                );
+
+                // Check if an event was matched and updated
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: 'Event or company not found.' });
+                }
+
+                // Respond with a success message
+                res.json({ message: 'Event updated successfully.' });
+            } catch (err) {
+                console.error("Error updating event:", err); // Log the error for debugging
+                res.status(500).json({ message: 'Internal server error.' });
+            }
+        });
+
+        // Delete an event
+        app.delete('/events/:email/:eventId', async (req, res) => {
+            const { email, eventId } = req.params;
+
+            try {
+                const result = await companiesCollection.updateOne(
+                    { email },
+                    { $pull: { events: { _id: new ObjectId(eventId) } } }
+                );
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: 'Event or company not found' });
+                }
+                res.json({ message: 'Event deleted successfully' });
+            } catch (err) {
+                console.error("Error deleting event:", err); // Log the error for debugging
+                res.status(500).json({ message: err.message });
             }
         });
         
