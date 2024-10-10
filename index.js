@@ -367,6 +367,36 @@ async function run() {
             }
         });
 
+        // Update events
+        app.put('/events/:email/:eventId', async (req, res) => {
+            const { email, eventId } = req.params;
+            const { title, start, end } = req.body;
+
+            console.log(email, eventId);
+            try {
+                // Ensure the input values are valid
+                if (!title || !start || !end) {
+                    return res.status(400).json({ message: 'Title, start, and end are required.' });
+                }
+
+                // Update the event in the companiesCollection
+                const result = await companiesCollection.updateOne(
+                    { email, 'events._id': new ObjectId(eventId) }, // Search for the event by ID
+                    { $set: { 'events.$.title': title, 'events.$.start': new Date(start), 'events.$.end': new Date(end) } }
+                );
+
+                // Check if an event was matched and updated
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: 'Event or company not found.' });
+                }
+
+                // Respond with a success message
+                res.json({ message: 'Event updated successfully.' });
+            } catch (err) {
+                console.error("Error updating event:", err); // Log the error for debugging
+                res.status(500).json({ message: 'Internal server error.' });
+            }
+        });
  
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
