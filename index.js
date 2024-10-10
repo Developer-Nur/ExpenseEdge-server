@@ -338,6 +338,35 @@ async function run() {
             }
         });
 
+        // add events
+        app.post('/events/:email', async (req, res) => {
+            const { email } = req.params;
+            const { title, start, end } = req.body;
+            console.log(email, req.body);
+
+            if (!title || !start || !end) {
+                return res.status(400).json({ message: 'Title, Start, and End are required' });
+            }
+        
+            try {
+                const event = { 
+                    _id: new ObjectId(),
+                    title, 
+                    start: new Date(start), 
+                    end: new Date(end) };
+                const result = await companiesCollection.updateOne(
+                    { email },
+                    { $push: { events: event } }
+                );
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: 'Company not found' });
+                }
+                res.status(201).json({ message: 'Event added successfully', event });
+            } catch (err) {
+                res.status(500).json({ message: err.message });
+            }
+        });
+
  
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
