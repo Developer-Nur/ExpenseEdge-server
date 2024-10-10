@@ -322,6 +322,23 @@ async function run() {
             }
         });
         
+        // get events
+        app.get('/events/:email', async (req, res) => {
+            const { email } = req.params;
+            console.log(email);
+            try {
+                const company = await companiesCollection.findOne({email});
+                if (!company) {
+                    return res.status(404).json({ message: 'Company not found' });
+                }
+                console.log(company.events);
+                res.json(company.events || []);
+            } catch (err) {
+                res.status(500).json({ message: err.message });
+            }
+        });
+
+ 
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
     }
