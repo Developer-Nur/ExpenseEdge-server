@@ -280,7 +280,7 @@ async function run() {
                 if (users.length > 0) {
                     res.status(200).json(users);
                 } else {
-                    res.status(404).json({ message: "User not found" });
+                    res.send({ message: "User not found" });
                 }
             } catch (error) {
                 console.error('Error fetching users:', error);
