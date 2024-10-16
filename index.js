@@ -108,7 +108,7 @@ async function run() {
             }
         });
 
-        // update company data
+        // update company income expense data
         app.put('/update-company-data/:id', async (req, res) => {
             const id = req.params.id;
             const { date, income, expense } = req.body;
