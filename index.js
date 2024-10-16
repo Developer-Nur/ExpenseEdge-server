@@ -65,7 +65,7 @@ async function run() {
         })
 
         // Route to fetch all companies
-        app.get('/companies', async (req, res) => {
+        app.get('/companies', verifyToken, async (req, res) => {
             try {
                 // console.log("token from local storage", req.headers);
                 const companies = await companiesCollection.find().toArray();
@@ -76,7 +76,7 @@ async function run() {
         });
 
         // Route to fetch all users
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyToken, async (req, res) => {
             try {
                 const users = await usersCollection.find().toArray();
                 res.json(users);
