@@ -35,7 +35,7 @@ async function run() {
             const dd = String(today.getDate()).padStart(2, '0');
             return `${yyyy}-${mm}-${dd}`;
         }
-        
+
         // middlewere to verify jwt token
         const verifyToken = (req, res, next) => {
             // console.log('inside verify token', req.headers);
@@ -65,7 +65,7 @@ async function run() {
         })
 
         // Route to fetch all companies
-        app.get('/companies', verifyToken, async (req, res) => {
+        app.get('/companies', async (req, res) => {
             try {
                 // console.log("token from local storage", req.headers);
                 const companies = await companiesCollection.find().toArray();
@@ -76,7 +76,7 @@ async function run() {
         });
 
         // Route to fetch all users
-        app.get('/users', verifyToken, async (req, res) => {
+        app.get('/users', async (req, res) => {
             try {
                 const users = await usersCollection.find().toArray();
                 res.json(users);
@@ -96,9 +96,11 @@ async function run() {
             try {
                 const companyName = req.params.companyName;
                 const result = await companiesCollection.findOne({ companyName: companyName });
+
                 if (!result) {
                     return res.status(404).json({ message: 'Company not found' });
                 }
+
                 res.json(result);
             } catch (error) {
                 console.error('Error fetching company data:', error); // Log error for debugging
@@ -109,20 +111,27 @@ async function run() {
         // update company data
         app.put('/update-company-data/:id', async (req, res) => {
             const id = req.params.id;
-            const query = req.body;
-            const filter = { _id: new ObjectId(id) };
-            const options = { upsert: true };
-            const updatedQuery = {
-                $set: {
-                    "data.income": query.income,
-                    "data.expense": query.expense,
-                    "data.assets": query.assets,
-                    "data.liabilities": query.liabilities,
-                    "data.equity": query.equity
+            const { date, income, expense } = req.body;
+
+            try {
+                const filter = { _id: new ObjectId(id), "data.incomeExpense.date": date };
+                const update = {
+                    $set: {
+                        "data.incomeExpense.$.income": income,
+                        "data.incomeExpense.$.expense": expense
+                    }
+                };
+
+                const result = await companiesCollection.updateOne(filter, update);
+
+                if (result.modifiedCount > 0) {
+                    res.status(200).send({ message: 'Data updated successfully' });
+                } else {
+                    res.status(404).send({ message: 'Entry not found' });
                 }
-            };
-            const result = await companiesCollection.updateOne(filter, updatedQuery, options);
-            res.send(result);
+            } catch (error) {
+                res.status(500).send({ message: 'Error updating data', error });
+            }
         });
 
 
@@ -309,8 +318,8 @@ async function run() {
         });
 
 
-         // company data for Financial Overview dashboard
-         app.get('/financial-info/:email', async (req, res) => {
+        // company data for Financial Overview dashboard
+        app.get('/financial-info/:email', async (req, res) => {
             try {
                 const email = req.params.email;
                 if (!email) {
@@ -342,7 +351,7 @@ async function run() {
             const { email } = req.params;
             console.log(email);
             try {
-                const company = await companiesCollection.findOne({email});
+                const company = await companiesCollection.findOne({ email });
                 if (!company) {
                     return res.status(404).json({ message: 'Company not found' });
                 }
@@ -352,7 +361,7 @@ async function run() {
                 res.status(500).json({ message: err.message });
             }
         });
-        
+
         // add events
         app.post('/events/:email', async (req, res) => {
             const { email } = req.params;
@@ -362,13 +371,14 @@ async function run() {
             if (!title || !start || !end) {
                 return res.status(400).json({ message: 'Title, Start, and End are required' });
             }
-        
+
             try {
-                const event = { 
+                const event = {
                     _id: new ObjectId(),
-                    title, 
-                    start: new Date(start), 
-                    end: new Date(end) };
+                    title,
+                    start: new Date(start),
+                    end: new Date(end)
+                };
                 const result = await companiesCollection.updateOne(
                     { email },
                     { $push: { events: event } }
@@ -381,7 +391,7 @@ async function run() {
                 res.status(500).json({ message: err.message });
             }
         });
-         
+
         // Update events
         app.put('/events/:email/:eventId', async (req, res) => {
             const { email, eventId } = req.params;
@@ -431,7 +441,7 @@ async function run() {
                 res.status(500).json({ message: err.message });
             }
         });
-        
+
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
     }
