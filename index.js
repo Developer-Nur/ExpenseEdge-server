@@ -166,15 +166,6 @@ async function run() {
             res.send(result);
         });
 
-
-
-
-
-
-
-
-
-
         // add company financial data
         app.patch('/company/:email', verifyToken, async (req, res) => {
             try {
@@ -441,6 +432,130 @@ async function run() {
                 res.status(500).json({ message: err.message });
             }
         });
+
+        //budget-management
+
+        // Add a new budget to a company
+        app.post('/budgets/:email', verifyToken, async (req, res) => {
+            try {
+                const { department, projectName, budgetAmount, currentExpenditure, alertThreshold } = req.body;
+                const email = req.params.email;
+
+                const newBudget = {
+                    _id: new ObjectId(),
+                    department,
+                    projectName, // Changed to match frontend
+                    budgetAmount: parseFloat(budgetAmount), // Changed to match frontend
+                    currentExpenditure: parseFloat(currentExpenditure), // Changed to match frontend
+                    alertThreshold: parseFloat(alertThreshold),
+                    createdDate: new Date().toISOString()
+                };
+
+                const result = await companiesCollection.updateOne(
+                    { email: email },
+                    { $push: { budgets: newBudget } }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: 'Company not found' });
+                }
+
+                res.status(201).json({ message: 'Budget added successfully', budget: newBudget });
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // Get all budgets for a company
+        app.get('/budgets/:email', verifyToken, async (req, res) => {
+            try {
+                const email = req.params.email;
+                const company = await companiesCollection.findOne({ email: email });
+
+                if (!company) {
+                    return res.status(404).json({ message: 'Company not found' });
+                }
+
+                res.json(company.budgets || []);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // Update a budget
+        app.put('/budgets/:email/:budgetId', verifyToken, async (req, res) => {
+            const { email, budgetId } = req.params;
+            const { budgetAmount, currentExpenditure, alertThreshold } = req.body;
+
+            try {
+                const result = await companiesCollection.updateOne(
+                    { email: email, 'budgets._id': new ObjectId(budgetId) },
+                    {
+                        $set: {
+                            'budgets.$.budgetAmount': parseFloat(budgetAmount), // Updated field name
+                            'budgets.$.currentExpenditure': parseFloat(currentExpenditure), // Updated field name
+                            'budgets.$.alertThreshold': parseFloat(alertThreshold)
+                        }
+                    }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: 'Budget or company not found' });
+                }
+
+                res.json({ message: 'Budget updated successfully' });
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // Delete a budget
+        app.delete('/budgets/:email/:budgetId', verifyToken, async (req, res) => {
+            const { email, budgetId } = req.params;
+
+            try {
+                const result = await companiesCollection.updateOne(
+                    { email: email },
+                    { $pull: { budgets: { _id: new ObjectId(budgetId) } } }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: 'Budget or company not found' });
+                }
+
+                res.json({ message: 'Budget deleted successfully' });
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+        // Check if a budget is overspent
+        app.get('/budgets/:email/:budgetId/check-overspend', verifyToken, async (req, res) => {
+            const { email, budgetId } = req.params;
+
+            try {
+                const company = await companiesCollection.findOne({ email: email });
+                if (!company) {
+                    return res.status(404).json({ message: 'Company not found' });
+                }
+
+                const budget = company.budgets.find(b => b._id.toString() === budgetId);
+                if (!budget) {
+                    return res.status(404).json({ message: 'Budget not found' });
+                }
+
+                if (budget.currentExpenditure > budget.alertThreshold) {
+                    return res.json({ message: 'Budget has exceeded the threshold', budget });
+                }
+
+                res.json({ message: 'Budget is within the limit', budget });
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
+
+
 
     } catch (error) {
         console.error("Failed to connect to MongoDB:", error);
