@@ -96,9 +96,11 @@ async function run() {
             try {
                 const companyName = req.params.companyName;
                 const result = await companiesCollection.findOne({ companyName: companyName });
+
                 if (!result) {
                     return res.status(404).json({ message: 'Company not found' });
                 }
+
                 res.json(result);
             } catch (error) {
                 console.error('Error fetching company data:', error); // Log error for debugging
@@ -106,23 +108,30 @@ async function run() {
             }
         });
 
-        // update company data
+        // update company income expense data
         app.put('/update-company-data/:id', async (req, res) => {
             const id = req.params.id;
-            const query = req.body;
-            const filter = { _id: new ObjectId(id) };
-            const options = { upsert: true };
-            const updatedQuery = {
-                $set: {
-                    "data.income": query.income,
-                    "data.expense": query.expense,
-                    "data.assets": query.assets,
-                    "data.liabilities": query.liabilities,
-                    "data.equity": query.equity
+            const { date, income, expense } = req.body;
+
+            try {
+                const filter = { _id: new ObjectId(id), "data.incomeExpense.date": date };
+                const update = {
+                    $set: {
+                        "data.incomeExpense.$.income": income,
+                        "data.incomeExpense.$.expense": expense
+                    }
+                };
+
+                const result = await companiesCollection.updateOne(filter, update);
+
+                if (result.modifiedCount > 0) {
+                    res.status(200).send({ message: 'Data updated successfully' });
+                } else {
+                    res.status(404).send({ message: 'Entry not found' });
                 }
-            };
-            const result = await companiesCollection.updateOne(filter, updatedQuery, options);
-            res.send(result);
+            } catch (error) {
+                res.status(500).send({ message: 'Error updating data', error });
+            }
         });
 
 
