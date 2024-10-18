@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const { MongoClient, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
+const schedule = require('node-schedule');
+const nodemailer = require('nodemailer');
 
 // middlewares
 app.use(cors());
@@ -26,6 +28,61 @@ async function run() {
         // Send a ping to confirm a successful connection 
         await db.command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+        const testAccount = await nodemailer.createTestAccount();
+
+        // Set up nodemailer transporter
+        const transporter = nodemailer.createTransport({
+            host: "smtp.ethereal.email",
+            port: 587,
+            secure: false,
+            auth: {
+                user: testAccount.user,
+                pass: testAccount.pass
+            }
+        });
+        
+        // Function to send email
+        async function sendEventNotification(email, event) {
+            const mailOptions = {
+                from: testAccount.user,
+                to: email,
+                subject: 'Event Reminder',
+                text: `Don't forget! You have an event today: ${event.title}`
+            };
+
+            try {
+                await transporter.sendMail(mailOptions);
+                console.log(`Notification sent to ${email} for event: ${event.title}`);
+            } catch (error) {
+                console.error('Error sending notification:', error);
+            }
+        }
+
+        // Schedule daily check for events
+        schedule.scheduleJob('0 0 * * *', async function() {
+            console.log('Running daily event check...');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            try {
+                const companies = await companiesCollection.find({}).toArray();
+                for (const company of companies) {
+                    if (company.events && Array.isArray(company.events)) {
+                        for (const event of company.events) {
+                            const eventDate = new Date(event.start);
+                            eventDate.setHours(0, 0, 0, 0);
+
+                            if (eventDate.getTime() === today.getTime()) {
+                                await sendEventNotification(company.email, event);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking events:', error);
+            }
+        });
 
         // get date
         function getCurrentDate() {
