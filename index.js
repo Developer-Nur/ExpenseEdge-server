@@ -126,7 +126,15 @@ async function run() {
 
 
 
-     
+         // Route to fetch all testimonials
+         app.get('/testimonials', async (req, res) => {
+            try {
+                const testimonials = await testimonialsCollection.find().toArray();
+                res.json(testimonials);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
 
 
 
