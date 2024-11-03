@@ -24,6 +24,7 @@ async function run() {
         // Collections
         const companiesCollection = db.collection('companies');
         const usersCollection = db.collection('users');
+        const testimonialsCollection = db.collection('testimonials'); 
 
         // Send a ping to confirm a successful connection 
         await db.command({ ping: 1 });
@@ -120,6 +121,15 @@ async function run() {
             // console.log("jwt email is", user, "and token is ", token);
             res.send({ token })
         })
+
+
+
+
+
+     
+
+
+
 
         // Route to fetch all companies
         app.get('/companies', verifyToken, async (req, res) => {
